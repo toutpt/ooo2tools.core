@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 # File: standard.py
-# Give common OpenOffice.org task under simple command
-# 
+#
 # Copyright (c) 2006 by ['Jean-Michel FRANCOIS']
-# Generator: ArchGenXML Version 1.5.0
-#            http://plone.org/products/archgenxml
 #
 # GNU General Public License (GPL)
 #
@@ -22,11 +19,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+"""Give common OpenOffice.org task under simple command"""
 import os
 from optparse import OptionParser
 
-
-#UNO import
 import uno
 from unohelper import systemPathToFileUrl, absolutize
 from com.sun.star.beans import PropertyValue
@@ -35,22 +32,10 @@ from com.sun.star.uno import Exception as UnoException, RuntimeException
 from com.sun.star.connection import NoConnectException
 from com.sun.star.lang import IllegalArgumentException
 from com.sun.star.io import IOException
-from com.sun.star.text.ControlCharacter import PARAGRAPH_BREAK 
+from com.sun.star.text.ControlCharacter import PARAGRAPH_BREAK
 
-
-#to parse argument from the cmd: 
-"""
-parser = OptionParser()
-parser.add_option("", "--port",
-                type="int", dest="port", default=2002,
-                help="specify the port")
-parser.add_option("", "--sequence",
-                type="string", dest="seq", default=2002,
-                help="specify the file that contains command sequences")
-
-(options, args) = parser.parse_args()
-"""
-
+import logging
+logger = logging.getLogger("ooo2tools.core.standard")
 #this is a global dictionnary to handle the current document
 ooo_info = dict()
 
@@ -70,7 +55,7 @@ def parse_seq(file_seq):
         if len(cmd) == 2:
             l.append(line.decode("UTF-8"))
         else:
-            print "cmd invalide :%s"%cmd
+            logger.info("cmd invalide :%s"%cmd)
     return l
 
 def cmd_open(ooo_info,syspath_doc):
@@ -111,7 +96,7 @@ def cmd_save_to(ooo_info,args):
     format = args.split(',')[1]
     doc = ooo_info['doc']
     dest_url = systemPathToFileUrl(dest_file)
-    print "save to %s from %s"%(format,dest_file)
+    logger.info( "save to %s from %s"%(format,dest_file))
     pp_filter = PropertyValue()
     pp_url = PropertyValue()
     pp_overwrite = PropertyValue()
@@ -136,7 +121,7 @@ def cmd_save_as(ooo_info,args):
     format = args.split(',')[1]
     doc = ooo_info['doc']
     dest_url = systemPathToFileUrl(dest_file)
-    print "save as %s from %s"%(format,dest_file)
+    logger.info("save as %s from %s"%(format,dest_file))
     pp_filter = PropertyValue()
     pp_url = PropertyValue()
     pp_overwrite = PropertyValue()
@@ -181,7 +166,7 @@ def cmd_insert_file(ooo_info,args):
         try:
             fileUrl = systemPathToFileUrl(file)
 
-            print "Appending %s" % fileUrl
+            logger.info("Appending %s" % fileUrl)
             try:
                 cursor.gotoEnd(False)
                 cursor.insertDocumentFromURL(fileUrl, ())
@@ -193,7 +178,7 @@ def cmd_insert_file(ooo_info,args):
         except IOException, e:
             sys.stderr.write("Error during opening: " + e.Message + "\n")
         except UnoException, e:
-            sys.stderr.write( "Error ("+repr(e.__class__)+") during conversion:" + 
+            sys.stderr.write( "Error ("+repr(e.__class__)+") during conversion:" +
                     e.Message + "\n" )
     else:
         raise IOException
@@ -201,7 +186,7 @@ def cmd_insert_file(ooo_info,args):
 
 def cmd_add_tag(ooo_info,args):
     """
-    add a tag to current document to be able to switch on later.
+    add a tag to current document to be able to switch on later and work on an other
     """
     tag = args
     if not ooo_info.has_key(tag):
@@ -212,13 +197,14 @@ def cmd_switch_document(ooo_info,args):
     """
     tag = args
     if not ooo_info.has_key(tag):
-        raise "no document declared under the tag %s"%tag
+        raise KeyError("no document declared under the tag %s"%tag)
     ooo_info['doc'] = ooo_info[tag]
 
 def ooo_connect():
     """
     Connection to open office server.
-    Fill a dictionnary and return it
+    -> {'ctx': ctx, 'smgr': smgr, 'doc': None, 'desktop': desktop,
+    'globals':globals()}
     """
     # get the uno component context from the PyUNO runtime
     localContext = uno.getComponentContext()
@@ -226,12 +212,10 @@ def ooo_connect():
     # create the UnoUrlResolver
     resolver = localContext.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", localContext )
 
-    # connect to the running office
     try:
         ctx = resolver.resolve("uno:socket,host=Huntingdon,port=%s;urp;StarOffice.ComponentContext"%(2002))
     except:
-        raise "impossible de se connecter au serveur openoffice"
-
+        raise Exception("Can't connect to openoffice.org server")
 
     smgr = ctx.ServiceManager
 

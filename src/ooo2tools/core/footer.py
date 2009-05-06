@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 # File: footer.py
-# For merging purpose (with standard for sure)
 #
 # Copyright (c) 2006 by ['Jean-Michel FRANCOIS']
-# Generator: ArchGenXML Version 1.5.0
-#            http://plone.org/products/archgenxml
 #
 # GNU General Public License (GPL)
 #
@@ -22,8 +19,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from standard import *
+"""For merging purpose with standard.py"""
 
+from standard import *
+import logging
+logger = logging.getLogger('ooo2tools.core.footer')
 parser = OptionParser()
 parser.add_option("", "--port",
                 type="int", dest="port", default=2002,
@@ -35,19 +35,16 @@ parser.add_option("", "--sequence",
 (options, args) = parser.parse_args()
 
 def execute_cmd(ooo_info,cmd_args,b_toc=False):
-    """
-    """
+    """Do it"""
     cmd = 'cmd_'
     cmd += cmd_args.split(':')[0]
     args = cmd_args.split(':')[1]
-    print "DBUG: cmd %s"%(cmd)
+    logger.info("DBUG: cmd %s"%(cmd))
     if os.path.isfile(args):
-        print "execute cmd %s %s a detecter un fichier en argument"%(cmd,args)
+        logger.info("execute cmd %s %s file in argument"%(cmd,args))
     if not ooo_info['globals'].has_key(cmd):
-        raise "execute cmd %s %s didn't find it"%(cmd,args)
-    #execute the cmd:
-    #special_cmd
-    ooo_info['globals'][cmd](ooo_info,args)
+        raise KeyError("Can't find cmd %s %s"%(cmd,args))
+    ooo_info['globals'].get(cmd)(ooo_info,args)
 
 list_cmd = parse_seq(options.seq)
 ooo_info = ooo_connect()
@@ -56,4 +53,4 @@ for cmd in list_cmd:
 if ooo_info:
     ooo_info['doc'].close(False)
 else:
-    raise 'problem de connexion au serveur OOo2'
+    raise Exception("Can't connect to openoffice.org server")

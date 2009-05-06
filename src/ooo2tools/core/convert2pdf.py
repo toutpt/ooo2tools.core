@@ -1,6 +1,10 @@
-# -*- coding: utf-8 *- 
+# -*- coding: utf-8 *-
 import os
 from optparse import OptionParser
+
+import uno
+from unohelper import systemPathToFileUrl, absolutize
+from com.sun.star.beans import PropertyValue
 
 parser = OptionParser()
 parser.add_option("", "--port",
@@ -42,9 +46,6 @@ def export2pdf(ooo_info,dest_file):
     outprop = (pp_filter, PropertyValue( "Overwrite" , 0, True , 0 ),)
     ooo_info['doc'].storeToURL(dest_url, outprop)
 
-import uno
-from unohelper import systemPathToFileUrl, absolutize
-from com.sun.star.beans import PropertyValue
 
 def ooo_connect():
     """
@@ -61,7 +62,7 @@ def ooo_connect():
     try:
         ctx = resolver.resolve("uno:socket,host=localhost,port=%s;urp;StarOffice.ComponentContext"%(options.port))
     except:
-        raise "impossible de se connecter au serveur openoffice"
+        raise Exception("Can't connect to openoffice.org server")
 
     smgr = ctx.ServiceManager
 
@@ -80,4 +81,4 @@ if ooo_info:
     export2pdf(ooo_info,options.destfile)
     ooo_info['doc'].close(False)
 else:
-    raise 'problem de connexion au serveur OOo2'
+    raise Exception("Can't connect to openoffice.org server")
